@@ -1,0 +1,39 @@
+## @file
+#  Library provides the hypervisor helper functions for SEV guest
+#
+# Copyright (c) 2020 Advanced Micro Devices. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.25
+  BASE_NAME                      = MemEncryptHypercallLib
+  FILE_GUID                      = 86f2501e-f128-45f3-91c4-3cff31656ca8
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = MemEncryptHypercallLib|SEC PEI_CORE PEIM DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER UEFI_DRIVER
+
+#
+# The following information is for reference only and not required by the build
+# tools.
+#
+# VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Packages]
+  MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  OvmfPkg/OvmfPkg.dec
+
+[Sources.X64]
+  MemEncryptHypercallLib.c
+  X64/AsmHelperStub.nasm
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  VmgExitLib
