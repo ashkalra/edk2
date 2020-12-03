@@ -15,6 +15,7 @@
 #include <Library/HobLib.h>
 #include <Library/MemEncryptSevLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/MemEncryptHypercallLib.h>
 #include <Library/PcdLib.h>
 #include <PiPei.h>
 #include <Register/Amd/Cpuid.h>
@@ -48,6 +49,15 @@ AmdSevEsInitialize (
 
   PcdStatus = PcdSetBoolS (PcdSevEsIsEnabled, TRUE);
   ASSERT_RETURN_ERROR (PcdStatus);
+
+  //
+  // GHCB_BASE setup during reset-vector needs to be marked as
+  // decrypted in the hypervisor page encryption bitmap.
+  //
+  SetMemoryEncDecHypercall3 (FixedPcdGet32 (PcdOvmfSecGhcbBase),
+    EFI_SIZE_TO_PAGES(FixedPcdGet32 (PcdOvmfSecGhcbSize)),
+    FALSE
+    );
 
   //
   // Allocate GHCB and per-CPU variable pages.
