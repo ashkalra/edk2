@@ -16,11 +16,13 @@
 #define __GHCB_H__
 
 #include <Base.h>
+#include <Uefi.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 
 #define UD_EXCEPTION  6
 #define GP_EXCEPTION 13
+#define HV_EXCEPTION 28
 #define VC_EXCEPTION 29
 
 #define GHCB_VERSION_MIN     1
@@ -56,6 +58,7 @@
 #define SVM_EXIT_AP_JUMP_TABLE                  0x80000005ULL
 #define SVM_EXIT_SNP_PAGE_STATE_CHANGE          0x80000010ULL
 #define SVM_EXIT_SNP_AP_CREATION                0x80000013ULL
+#define SVM_EXIT_SNP_HVDB_PAGE                  0x80000014ULL
 #define SVM_EXIT_HYPERVISOR_FEATURES            0x8000FFFDULL
 #define SVM_EXIT_UNSUPPORTED                    0x8000FFFFULL
 
@@ -90,6 +93,14 @@
 #define SVM_VMGEXIT_SNP_AP_CREATE_ON_INIT  0
 #define SVM_VMGEXIT_SNP_AP_CREATE          1
 #define SVM_VMGEXIT_SNP_AP_DESTROY         2
+
+//
+// #HV Doorbell Page Information
+//
+#define SVM_VMGEXIT_SNP_HVDB_GET_PREFERRED  0
+#define SVM_VMGEXIT_SNP_HVDB_SET            1
+#define SVM_VMGEXIT_SNP_HVDB_QUERY          2
+#define SVM_VMGEXIT_SNP_HVDB_CLEAR          3
 
 typedef PACKED struct {
   UINT8                  Reserved1[203];
@@ -277,6 +288,36 @@ typedef struct {
   UINT8                    Reserved9[2];
   UINT16                   X87Fcw;
 } SEV_ES_SAVE_AREA;
+
+//
+// #HV Doorbell Page mapping
+//
+typedef union {
+  struct {
+    UINT8              Vector;
+    UINT8              NmEvents;
+  } Fields;
+  struct {
+    UINT16             Reserved1:8;
+    UINT16             NmiRequested:1;
+    UINT16             MceRequested:1;
+    UINT16             Reserved2:5;
+    UINT16             NoFurtherSignal:1;
+  } Bits;
+  UINT16               Uint16;
+} HVDB_PENDING_EVENTS;
+
+typedef struct {
+  HVDB_PENDING_EVENTS  PendingEvents;
+  UINT8                NoEoiRequired;
+  UINT8                Reserved1[61];
+} HVDB_EVENTS;
+
+typedef struct {
+  HVDB_EVENTS          Events;
+  UINT8                Reserved1[EFI_PAGE_SIZE - sizeof(HVDB_EVENTS)];
+} HVDB;
+
 #pragma pack ()
 
 #endif

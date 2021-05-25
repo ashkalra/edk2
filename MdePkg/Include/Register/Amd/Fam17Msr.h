@@ -121,7 +121,22 @@ typedef union {
     ///
     UINT32  SevSnpBit:1;
 
-    UINT32  Reserved2:29;
+    ///
+    /// [Bit 3] Virtual Top-Of-Memory (TOM) is enabled
+    ///
+    UINT32  SevSnpVirtualTom:1;
+
+    ///
+    /// [Bit 4] Reflect VC (#VC becomes an automatic exit) is enabled
+    ///
+    UINT32  SevSnpReflectVc:1;
+
+    ///
+    /// [Bit 5] Restricted Injection is enabled
+    ///
+    UINT32  SevSnpRestrictedInj:1;
+
+    UINT32  Reserved3:26;
   } Bits;
   ///
   /// All bit fields as a 32-bit value
