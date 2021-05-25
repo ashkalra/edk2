@@ -64,13 +64,13 @@ VmgExitHandleVc (
   // Check for maximum PEI/DXE #VC nesting.
   //
   if (SevEsData->VcCount > VMGEXIT_MAXIMUM_VC_COUNT) {
-    VmgExitIssueAssert (SevEsData);
+    VmgExitVcIssueAssert (SevEsData);
   } else if (SevEsData->VcCount > 1) {
     //
     // Nested #VC
     //
     if (SevEsData->GhcbBackupPages == NULL) {
-      VmgExitIssueAssert (SevEsData);
+      VmgExitVcIssueAssert (SevEsData);
     }
 
     //

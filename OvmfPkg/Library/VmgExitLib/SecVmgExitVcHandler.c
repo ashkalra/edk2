@@ -64,7 +64,7 @@ VmgExitHandleVc (
   // Check for maximum SEC #VC nesting.
   //
   if (SevEsData->VcCount > VMGEXIT_MAXIMUM_VC_COUNT) {
-    VmgExitIssueAssert (SevEsData);
+    VmgExitVcIssueAssert (SevEsData);
   } else if (SevEsData->VcCount > 1) {
     UINTN  GhcbBackupSize;
 
@@ -76,7 +76,7 @@ VmgExitHandleVc (
       //
       // Not enough SEC backup pages allocated.
       //
-      VmgExitIssueAssert (SevEsData);
+      VmgExitVcIssueAssert (SevEsData);
     }
 
     //
