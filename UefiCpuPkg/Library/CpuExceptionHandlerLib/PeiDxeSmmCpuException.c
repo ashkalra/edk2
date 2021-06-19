@@ -43,6 +43,21 @@ CommonExceptionHandlerWorker (
     if (!EFI_ERROR (Status)) {
       return;
     }
+  } else if (ExceptionType == HV_EXCEPTION) {
+    EFI_STATUS  Status;
+    //
+    // #HV needs to be handled immediately upon enabling exception handling
+    // and therefore can't use the RegisterCpuInterruptHandler() interface.
+    //
+    // Handle the #VC:
+    //   On EFI_SUCCESS - Exception has been handled, return
+    //   On other       - ExceptionType contains (possibly new) exception
+    //                    value
+    //
+    Status = VmgExitHandleHv (&ExceptionType, SystemContext);
+    if (!EFI_ERROR (Status)) {
+      return;
+    }
   }
 
   ExceptionHandlerContext  = (EXCEPTION_HANDLER_CONTEXT *) (UINTN) (SystemContext.SystemContextIa32);
