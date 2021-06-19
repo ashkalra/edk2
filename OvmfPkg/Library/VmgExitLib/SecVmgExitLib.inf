@@ -21,10 +21,11 @@
 #
 
 [Sources.common]
+  SecVmgExitVcHandler.c
+  VmgExitHvHandler.c
   VmgExitLib.c
   VmgExitVcHandler.c
   VmgExitVcHandler.h
-  SecVmgExitVcHandler.c
 
 [Packages]
   MdePkg/MdePkg.dec
