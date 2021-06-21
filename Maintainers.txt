@@ -449,8 +449,10 @@ F: OvmfPkg/AmdSev/
 F: OvmfPkg/AmdSevDxe/
 F: OvmfPkg/Include/Guid/ConfidentialComputingSecret.h
 F: OvmfPkg/Include/Library/MemEncryptSevLib.h
+F: OvmfPkg/Include/Library/MemEncryptHypercallLib.h
 F: OvmfPkg/IoMmuDxe/AmdSevIoMmu.*
 F: OvmfPkg/Library/BaseMemEncryptSevLib/
+F: OvmfPkg/Library/MemEncryptHypercallLib/
 F: OvmfPkg/Library/PlatformBootManagerLibGrub/
 F: OvmfPkg/Library/VmgExitLib/
 F: OvmfPkg/PlatformPei/AmdSev.c
