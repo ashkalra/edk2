@@ -49,6 +49,7 @@
   DebugLib
   MemoryAllocationLib
   PcdLib
+  MemEncryptHypercallLib
 
 [FeaturePcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdSmmSmramRequire
