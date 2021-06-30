@@ -2,7 +2,7 @@
 
   Define Secure Encrypted Virtualization (SEV) base library helper function
 
-  Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
+  Copyright (c) 2017 - 2020, AMD Incorporated. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -12,6 +12,59 @@
 #define _MEM_ENCRYPT_SEV_LIB_H_
 
 #include <Base.h>
+
+//
+// Define the maximum number of #VCs allowed (e.g. the level of nesting
+// that is allowed => 2 allows for 1 nested #VCs). I this value is changed,
+// be sure to increase the size of
+//   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupSize
+// in any FDF file using this PCD.
+//
+#define VMGEXIT_MAXIMUM_VC_COUNT   2
+
+//
+// Per-CPU data mapping structure
+//   Use UINT32 for cached indicators and compare to a specific value
+//   so that the hypervisor can't indicate a value is cached by just
+//   writing random data to that area.
+//
+typedef struct {
+  UINT32  Dr7Cached;
+  UINT64  Dr7;
+
+  UINTN   VcCount;
+  VOID    *GhcbBackupPages;
+} SEV_ES_PER_CPU_DATA;
+
+//
+// Internal structure for holding SEV-ES information needed during SEC phase
+// and valid only during SEC phase and early PEI during platform
+// initialization.
+//
+// This structure is also used by assembler files:
+//   OvmfPkg/ResetVector/ResetVector.nasmb
+//   OvmfPkg/ResetVector/Ia32/PageTables64.asm
+//   OvmfPkg/ResetVector/Ia32/Flat32ToFlat64.asm
+// any changes must stay in sync with its usage.
+//
+typedef struct _SEC_SEV_ES_WORK_AREA {
+  UINT8    SevEsEnabled;
+  UINT8    Reserved1[7];
+
+  UINT64   RandomData;
+
+  UINT64   EncryptionMask;
+} SEC_SEV_ES_WORK_AREA;
+
+//
+// Memory encryption address range states.
+//
+typedef enum {
+  MemEncryptSevAddressRangeUnencrypted,
+  MemEncryptSevAddressRangeEncrypted,
+  MemEncryptSevAddressRangeMixed,
+  MemEncryptSevAddressRangeError,
+} MEM_ENCRYPT_SEV_ADDRESS_RANGE_STATE;
 
 /**
   Returns a boolean to indicate whether SEV-ES is enabled.
@@ -38,6 +91,18 @@ MemEncryptSevIsEnabled (
   );
 
 /**
+  Returns a boolean to indicate whether SEV live migration is enabled.
+
+  @retval TRUE           SEV live migration is enabled
+  @retval FALSE          SEV live migration is not enabled
+**/
+BOOLEAN
+EFIAPI
+MemEncryptSevLiveMigrationIsEnabled (
+  VOID
+  );
+
+/**
   This function clears memory encryption bit for the memory region specified by
   BaseAddress and NumPages from the current page table context.
 
@@ -47,8 +112,6 @@ MemEncryptSevIsEnabled (
                                       address of a memory region.
   @param[in]  NumPages                The number of pages from start memory
                                       region.
-  @param[in]  Flush                   Flush the caches before clearing the bit
-                                      (mostly TRUE except MMIO addresses)
 
   @retval RETURN_SUCCESS              The attributes were cleared for the
                                       memory region.
@@ -61,8 +124,7 @@ EFIAPI
 MemEncryptSevClearPageEncMask (
   IN PHYSICAL_ADDRESS         Cr3BaseAddress,
   IN PHYSICAL_ADDRESS         BaseAddress,
-  IN UINTN                    NumPages,
-  IN BOOLEAN                  Flush
+  IN UINTN                    NumPages
   );
 
 /**
@@ -75,8 +137,6 @@ MemEncryptSevClearPageEncMask (
                                       address of a memory region.
   @param[in]  NumPages                The number of pages from start memory
                                       region.
-  @param[in]  Flush                   Flush the caches before setting the bit
-                                      (mostly TRUE except MMIO addresses)
 
   @retval RETURN_SUCCESS              The attributes were set for the memory
                                       region.
@@ -89,8 +149,7 @@ EFIAPI
 MemEncryptSevSetPageEncMask (
   IN PHYSICAL_ADDRESS         Cr3BaseAddress,
   IN PHYSICAL_ADDRESS         BaseAddress,
-  IN UINTN                    NumPages,
-  IN BOOLEAN                  Flush
+  IN UINTN                    NumPages
   );
 
 
@@ -115,4 +174,92 @@ MemEncryptSevLocateInitialSmramSaveStateMapPages (
   OUT UINTN *BaseAddress,
   OUT UINTN *NumberOfPages
   );
+
+/**
+  Returns the SEV encryption mask.
+
+  @return  The SEV pagetable encryption mask
+**/
+UINT64
+EFIAPI
+MemEncryptSevGetEncryptionMask (
+  VOID
+  );
+
+/**
+  Returns the encryption state of the specified virtual address range.
+
+  @param[in]  Cr3BaseAddress          Cr3 Base Address (if zero then use
+                                      current CR3)
+  @param[in]  BaseAddress             Base address to check
+  @param[in]  Length                  Length of virtual address range
+
+  @retval MemEncryptSevAddressRangeUnencrypted  Address range is mapped
+                                                unencrypted
+  @retval MemEncryptSevAddressRangeEncrypted    Address range is mapped
+                                                encrypted
+  @retval MemEncryptSevAddressRangeMixed        Address range is mapped mixed
+  @retval MemEncryptSevAddressRangeError        Address range is not mapped
+**/
+MEM_ENCRYPT_SEV_ADDRESS_RANGE_STATE
+EFIAPI
+MemEncryptSevGetAddressRangeState (
+  IN PHYSICAL_ADDRESS         Cr3BaseAddress,
+  IN PHYSICAL_ADDRESS         BaseAddress,
+  IN UINTN                    Length
+  );
+
+/**
+  This function clears memory encryption bit for the MMIO region specified by
+  BaseAddress and NumPages.
+
+  @param[in]  Cr3BaseAddress          Cr3 Base Address (if zero then use
+                                      current CR3)
+  @param[in]  BaseAddress             The physical address that is the start
+                                      address of a MMIO region.
+  @param[in]  NumPages                The number of pages from start memory
+                                      region.
+
+  @retval RETURN_SUCCESS              The attributes were cleared for the
+                                      memory region.
+  @retval RETURN_INVALID_PARAMETER    Number of pages is zero.
+  @retval RETURN_UNSUPPORTED          Clearing the memory encryption attribute
+                                      is not supported
+**/
+RETURN_STATUS
+EFIAPI
+MemEncryptSevClearMmioPageEncMask (
+  IN PHYSICAL_ADDRESS         Cr3BaseAddress,
+  IN PHYSICAL_ADDRESS         BaseAddress,
+  IN UINTN                    NumPages
+  );
+
+/**
+ This hyercall is used to notify hypervisor when a page is marked as
+ 'decrypted' (i.e C-bit removed).
+
+ @param[in]   PhysicalAddress       The physical address that is the start address
+                                    of a memory region. The PhysicalAddress is
+                                    expected to be PAGE_SIZE aligned.
+ @param[in]   Pages                 Number of pages in memory region.
+ @param[in]   Mode                  SetCBit or ClearCBit
+
+@retval RETURN_SUCCESS              Hypercall returned success.
+**/
+RETURN_STATUS
+EFIAPI
+SetMemoryEncDecHypercall3 (
+  IN  UINTN     PhysicalAddress,
+  IN  UINTN     Pages,
+  IN  UINTN     Mode
+  );
+
+#define KVM_HC_MAP_GPA_RANGE   12
+#define KVM_MAP_GPA_RANGE_PAGE_SZ_4K    0
+#define KVM_MAP_GPA_RANGE_PAGE_SZ_2M    BIT0
+#define KVM_MAP_GPA_RANGE_PAGE_SZ_1G    BIT1
+#define KVM_MAP_GPA_RANGE_ENC_STAT(n)   ((n) << 4)
+#define KVM_MAP_GPA_RANGE_ENCRYPTED     KVM_MAP_GPA_RANGE_ENC_STAT(1)
+#define KVM_MAP_GPA_RANGE_DECRYPTED     KVM_MAP_GPA_RANGE_ENC_STAT(0)
+
 #endif // _MEM_ENCRYPT_SEV_LIB_H_

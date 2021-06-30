@@ -1,13 +1,15 @@
 /** @file
+  ArmLibPrivate.h
 
+  Copyright (c) 2020, NUVIA Inc. All rights reserved.<BR>
   Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __ARM_LIB_PRIVATE_H__
-#define __ARM_LIB_PRIVATE_H__
+#ifndef ARM_LIB_PRIVATE_H_
+#define ARM_LIB_PRIVATE_H_
 
 #define CACHE_SIZE_4_KB             (3UL)
 #define CACHE_SIZE_8_KB             (4UL)
@@ -61,14 +63,4 @@ CPSRRead (
   VOID
   );
 
-UINT32
-ReadCCSIDR (
-  IN UINT32 CSSELR
-  );
-
-UINT32
-ReadCLIDR (
-  VOID
-  );
-
-#endif // __ARM_LIB_PRIVATE_H__
+#endif // ARM_LIB_PRIVATE_H_

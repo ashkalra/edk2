@@ -16,11 +16,15 @@
         ##     "<ErrorID>", "<KeyWord>"
         ## ]
         "ExceptionList": [
+            "8005", "UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGE.UID",
+            "8005", "UNIVERSAL_PAYLOAD_PCI_ROOT_BRIDGE.HID",
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
             "Library/BrotliCustomDecompressLib/brotli",
-            "Universal/RegularExpressionDxe/oniguruma"
+            "Universal/RegularExpressionDxe/oniguruma",
+            "Library/LzmaCustomDecompressLib/Sdk/DOC",
+            "Library/LzmaCustomDecompressLib/Sdk/C"
         ]
     },
     ## options defined ci/Plugin/CompilerPlugin

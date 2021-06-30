@@ -1,6 +1,6 @@
 /** @file
 *
-*  Copyright (c) 2011-2018, ARM Limited. All rights reserved.
+*  Copyright (c) 2011-2021, Arm Limited. All rights reserved.
 *
 *  SPDX-License-Identifier: BSD-2-Clause-Patent
 *
@@ -25,10 +25,13 @@
                                            + ARM_GICR_SGI_RESERVED_FRAME_SIZE)
 
 #define ISENABLER_ADDRESS(base,offset) ((base) + \
-          ARM_GICR_CTLR_FRAME_SIZE +  ARM_GICR_ISENABLER + (4 * offset))
+          ARM_GICR_CTLR_FRAME_SIZE + ARM_GICR_ISENABLER + 4 * (offset))
 
 #define ICENABLER_ADDRESS(base,offset) ((base) + \
-          ARM_GICR_CTLR_FRAME_SIZE +  ARM_GICR_ICENABLER + (4 * offset))
+          ARM_GICR_CTLR_FRAME_SIZE + ARM_GICR_ICENABLER + 4 * (offset))
+
+#define IPRIORITY_ADDRESS(base,offset) ((base) + \
+          ARM_GICR_CTLR_FRAME_SIZE + ARM_GIC_ICDIPR + 4 * (offset))
 
 /**
  *
@@ -117,7 +120,14 @@ ArmGicGetMaxNumInterrupts (
   IN  INTN          GicDistributorBase
   )
 {
-  return 32 * ((MmioRead32 (GicDistributorBase + ARM_GIC_ICDICTR) & 0x1F) + 1);
+  UINTN ItLines;
+
+  ItLines = MmioRead32 (GicDistributorBase + ARM_GIC_ICDICTR) & 0x1F;
+
+  //
+  // Interrupt ID 1020-1023 are reserved.
+  //
+  return (ItLines == 0x1f) ? 1020 : 32 * (ItLines + 1);
 }
 
 VOID
@@ -196,6 +206,50 @@ ArmGicEndOfInterrupt (
     ArmGicV3EndOfInterrupt (Source);
   } else {
     ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
+  }
+}
+
+VOID
+EFIAPI
+ArmGicSetInterruptPriority (
+  IN UINTN                  GicDistributorBase,
+  IN UINTN                  GicRedistributorBase,
+  IN UINTN                  Source,
+  IN UINTN                  Priority
+  )
+{
+  UINT32                RegOffset;
+  UINTN                 RegShift;
+  ARM_GIC_ARCH_REVISION Revision;
+  UINTN                 GicCpuRedistributorBase;
+
+  // Calculate register offset and bit position
+  RegOffset = Source / 4;
+  RegShift = (Source % 4) * 8;
+
+  Revision = ArmGicGetSupportedArchRevision ();
+  if ((Revision == ARM_GIC_ARCH_REVISION_2) ||
+      FeaturePcdGet (PcdArmGicV3WithV2Legacy) ||
+      SourceIsSpi (Source)) {
+    MmioAndThenOr32 (
+      GicDistributorBase + ARM_GIC_ICDIPR + (4 * RegOffset),
+      ~(0xff << RegShift),
+      Priority << RegShift
+      );
+  } else {
+    GicCpuRedistributorBase = GicGetCpuRedistributorBase (
+                                GicRedistributorBase,
+                                Revision
+                                );
+    if (GicCpuRedistributorBase == 0) {
+      return;
+    }
+
+    MmioAndThenOr32 (
+      IPRIORITY_ADDRESS (GicCpuRedistributorBase, RegOffset),
+      ~(0xff << RegShift),
+      Priority << RegShift
+      );
   }
 }
 
