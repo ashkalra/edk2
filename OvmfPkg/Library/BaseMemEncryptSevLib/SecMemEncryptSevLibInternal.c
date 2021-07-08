@@ -63,6 +63,26 @@ InternalMemEncryptSevStatus (
 }
 
 /**
+  Returns a boolean to indicate whether SEV-SNP is running with
+  restricted interrupt injection
+
+  @retval TRUE           SEV-SNP restricted injection is enabled
+  @retval FALSE          SEV-SNP restricted injection is not enabled
+**/
+BOOLEAN
+EFIAPI
+MemEncryptSevSnpRestrictedInjEnabled (
+  VOID
+  )
+{
+  MSR_SEV_STATUS_REGISTER           Msr;
+
+  Msr.Uint32 = InternalMemEncryptSevStatus ();
+
+  return Msr.Bits.SevSnpRestrictedInj ? TRUE : FALSE;
+}
+
+/**
   Returns a boolean to indicate whether SEV-SNP is enabled.
 
   @retval TRUE           SEV-SNP is enabled

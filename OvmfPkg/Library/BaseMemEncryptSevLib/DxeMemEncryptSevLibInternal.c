@@ -20,6 +20,7 @@
 STATIC BOOLEAN mSevStatus = FALSE;
 STATIC BOOLEAN mSevEsStatus = FALSE;
 STATIC BOOLEAN mSevSnpStatus = FALSE;
+STATIC BOOLEAN mSevSnpRestrictedInjStatus = FALSE;
 STATIC BOOLEAN mSevStatusChecked = FALSE;
 
 STATIC UINT64  mSevEncryptionMask = 0;
@@ -90,9 +91,36 @@ InternalMemEncryptSevStatus (
     if (Msr.Bits.SevSnpBit) {
       mSevSnpStatus = TRUE;
     }
+
+    //
+    // Check MSR_0xC0010131 Bit 5 (Sev-Snp Restricted Injection Enabled)
+    //
+    if (Msr.Bits.SevSnpRestrictedInj) {
+      mSevSnpRestrictedInjStatus = TRUE;
+    }
   }
 
   mSevStatusChecked = TRUE;
+}
+
+/**
+  Returns a boolean to indicate whether SEV-SNP is running with
+  restricted interrupt injection
+
+  @retval TRUE           SEV-SNP restricted injection is enabled
+  @retval FALSE          SEV-SNP restricted injection is not enabled
+**/
+BOOLEAN
+EFIAPI
+MemEncryptSevSnpRestrictedInjEnabled (
+  VOID
+  )
+{
+  if (!mSevStatusChecked) {
+    InternalMemEncryptSevStatus ();
+  }
+
+  return mSevSnpRestrictedInjStatus;
 }
 
 /**
