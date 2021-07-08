@@ -16,6 +16,7 @@
 #include <Library/MemEncryptSevLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
+#include <Library/VmgExitLib.h>
 #include <PiPei.h>
 #include <Register/Amd/Msr.h>
 #include <Register/Intel/SmramSaveStateMap.h>
@@ -28,6 +29,106 @@ UINT64
 GetHypervisorFeature (
   VOID
   );
+
+/**
+  Register a #HV doorbell page.
+
+  Registers the #HV doorbell page (HVDB) for the current vCPU.
+
+  @param[in]  Hvdb  Physical address of the HVDB page
+
+**/
+STATIC
+VOID
+AmdSevSnpRegisterHvdb (
+  IN VOID  *Hvdb
+  )
+{
+    MSR_SEV_ES_GHCB_REGISTER  Msr;
+    GHCB                      *Ghcb;
+    BOOLEAN                   InterruptState;
+    UINT64                    Status;
+
+    Msr.GhcbPhysicalAddress = AsmReadMsr64 (MSR_SEV_ES_GHCB);
+    Ghcb = Msr.Ghcb;
+
+    VmgInit (Ghcb, &InterruptState);
+
+    //
+    // Register the #HV doorbell page with the hypervisor
+    //
+    Status = VmgExit (
+      Ghcb,
+      SVM_EXIT_SNP_HVDB_PAGE,
+      SVM_VMGEXIT_SNP_HVDB_SET,
+      (UINT64)(UINTN) Hvdb
+      );
+    ASSERT (Status == 0);
+
+    VmgDone (Ghcb, InterruptState);
+}
+
+/**
+  Initialize SEV-SNP restricted injection support if it is enabled.
+
+**/
+STATIC
+VOID
+AmdSevSnpRestrictedInjInitialize (
+  VOID
+  )
+{
+  UINTN                GhcbPageCount;
+  UINT8                *GhcbBase;
+  UINT8                *HvdbBase;
+  UINT8                *HvdbPage;
+  SEV_ES_PER_CPU_DATA  *SevEsData;
+  UINTN                PageCount;
+  RETURN_STATUS        DecryptStatus;
+
+  if (!MemEncryptSevSnpRestrictedInjEnabled ()) {
+    return;
+  }
+
+  //
+  // To access the per-CPU pages that will hold the #HV doorbell page (HVDB)
+  // address, get the GHCB base (every other page is the per-CPU page).
+  //
+  GhcbBase = (UINT8 *)(UINTN) PcdGet64 (PcdGhcbBase);
+  ASSERT (GhcbBase != 0);
+  GhcbPageCount = mMaxCpuCount * 2;
+
+  //
+  // Allocate #HV doorbell (HVDB) pages for #HV support. The pages need to be
+  // accessible by the hypervisor, so clear the encryption mask.
+  //
+  HvdbBase = AllocatePages (mMaxCpuCount);
+  ASSERT (HvdbBase != NULL);
+
+  DecryptStatus = MemEncryptSevClearPageEncMask (
+    0,
+    (PHYSICAL_ADDRESS)(UINTN) HvdbBase,
+    mMaxCpuCount
+    );
+  ASSERT_RETURN_ERROR (DecryptStatus);
+
+  ZeroMem (HvdbBase, EFI_PAGES_TO_SIZE (mMaxCpuCount));
+
+  HvdbPage = HvdbBase;
+  for (PageCount = 1; PageCount < GhcbPageCount; PageCount += 2) {
+    SevEsData =
+      (SEV_ES_PER_CPU_DATA *)(GhcbBase + EFI_PAGES_TO_SIZE (PageCount));
+
+    SevEsData->Hvdb = (HVDB *) HvdbPage;
+    HvdbPage += EFI_PAGE_SIZE;
+  }
+
+  AmdSevSnpRegisterHvdb (HvdbBase);
+
+  DEBUG ((DEBUG_INFO,
+    "SEV-SNP restricted injection is enabled, %lu HVDB pages allocated starting at 0x%p\n",
+    (UINT64)mMaxCpuCount, HvdbBase));
+}
 
 /**
   Initialize SEV-SNP support if running as an SEV-SNP guest.
@@ -401,4 +502,9 @@ AmdSevInitialize (
   // Check and perform SEV-ES initialization if required.
   //
   AmdSevEsInitialize ();
+
+  //
+  // Check and perform SEV-SNP restricted injection initialization if required.
+  //
+  AmdSevSnpRestrictedInjInitialize ();
 }
