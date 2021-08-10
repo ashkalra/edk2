@@ -85,6 +85,7 @@ AmdSevSnpRestrictedInjInitialize (
   SEV_ES_PER_CPU_DATA  *SevEsData;
   UINTN                PageCount;
   RETURN_STATUS        DecryptStatus;
+  RETURN_STATUS        PcdStatus;
 
   if (!MemEncryptSevSnpRestrictedInjEnabled ()) {
     return;
@@ -113,6 +114,12 @@ AmdSevSnpRestrictedInjInitialize (
   ASSERT_RETURN_ERROR (DecryptStatus);
 
   ZeroMem (HvdbBase, EFI_PAGES_TO_SIZE (mMaxCpuCount));
+
+  PcdStatus = PcdSet64S (PcdHvdbBase, (UINTN) HvdbBase);
+  ASSERT_RETURN_ERROR (PcdStatus);
+
+  PcdStatus = PcdSet64S (PcdHvdbSize, EFI_PAGES_TO_SIZE (mMaxCpuCount));
+  ASSERT_RETURN_ERROR (PcdStatus);
 
   HvdbPage = HvdbBase;
   for (PageCount = 1; PageCount < GhcbPageCount; PageCount += 2) {

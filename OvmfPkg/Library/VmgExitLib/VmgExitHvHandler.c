@@ -68,6 +68,7 @@ InternalVmgExitHandleHv (
   }
 
   PendingEvents = &Hvdb->Events.PendingEvents.Uint16;
+  Events.PendingEvents.Uint16 = 0;
   asm volatile ("xchgw %w0, %1\n"
 		: "+r" (Events.PendingEvents.Uint16), "+m" (*PendingEvents)
 		: : "memory", "cc");
@@ -84,7 +85,9 @@ InternalVmgExitHandleHv (
   // Return the supplied vector to have the exception handler
   // infrastructure process it. No vector will look like EFI_SUCCESS
   //
-  return (EFI_STATUS) Events.PendingEvents.Fields.Vector;
+  *ExceptionType = Events.PendingEvents.Fields.Vector;
+
+  return EFI_PROTOCOL_ERROR;
 }
 
 /**

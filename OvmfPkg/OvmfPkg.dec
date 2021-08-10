@@ -403,6 +403,12 @@
   #  instance in PiSmmCpuDxeSmm, and CpuHotplugSmm.
   gUefiOvmfPkgTokenSpaceGuid.PcdCpuHotEjectDataAddress|0|UINT64|0x46
 
+  ## The base address and size of the HVDB pages used by SEV-SNP when
+  #  restricted injection is active.
+  #
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbBase|0|UINT64|0x5a
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbSize|0|UINT64|0x5b
+
 [PcdsFeatureFlag]
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderPciTranslation|TRUE|BOOLEAN|0x1c
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderMmioTranslation|FALSE|BOOLEAN|0x1d

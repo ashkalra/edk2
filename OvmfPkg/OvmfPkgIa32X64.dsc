@@ -646,6 +646,10 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbSize|0
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsIsEnabled|0
 
+  # Set SEV-SNP restricted injection defaults
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbBase|0
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbSize|0
+
 !if $(SMM_REQUIRE) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdQ35TsegMbytes|8
   gUefiOvmfPkgTokenSpaceGuid.PcdQ35SmramAtDefaultSmbase|FALSE

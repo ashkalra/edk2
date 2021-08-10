@@ -52,3 +52,5 @@
 
 [Pcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdHvdbSize

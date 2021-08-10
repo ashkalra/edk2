@@ -142,6 +142,29 @@ AmdSevDxeEntryPoint (
     }
   }
 
+  // If SEV-SNP is enabled and we have #HV doorbell pages, the encryption mask
+  // needs to be cleared. Since the pages will have been made shared in the PEI
+  // phase, we only need to clear the encryption mask and not perform any RMP
+  // updates or validation, so use the XXX API.
+  //
+  if (MemEncryptSevSnpRestrictedInjEnabled ()) {
+    EFI_PHYSICAL_ADDRESS HvdbBase;
+    UINT64               HvdbSize;
+
+    HvdbBase = PcdGet64 (PcdHvdbBase);
+    ASSERT (HvdbBase != 0);
+
+    HvdbSize = PcdGet64 (PcdHvdbSize);
+    ASSERT (HvdbSize != 0);
+
+    Status = MemEncryptSevClearMmioPageEncMask (
+               0,
+               HvdbBase,
+               EFI_SIZE_TO_PAGES (HvdbSize)
+               );
+    ASSERT_EFI_ERROR (Status);
+  }
+
   //
   // If its SEV-SNP active guest then install the CONFIDENTIAL_COMPUTING_BLOB.
   // It contains the location for both the Secrets and CPUID page.
