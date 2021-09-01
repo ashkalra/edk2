@@ -5,11 +5,11 @@
 ;
 ; Module Name:
 ;
-;   DisableInterrupts.Asm
+;   AsmDisableInterrupts.Asm
 ;
 ; Abstract:
 ;
-;   DisableInterrupts function
+;   AsmDisableInterrupts function
 ;
 ; Notes:
 ;
@@ -21,12 +21,12 @@
 ;------------------------------------------------------------------------------
 ; VOID
 ; EFIAPI
-; DisableInterrupts (
+; AsmDisableInterrupts (
 ;   VOID
 ;   );
 ;------------------------------------------------------------------------------
-global ASM_PFX(DisableInterrupts)
-ASM_PFX(DisableInterrupts):
+global ASM_PFX(AsmDisableInterrupts)
+ASM_PFX(AsmDisableInterrupts):
     cli
     ret
 

@@ -313,9 +313,9 @@
   X86RdRand.c
   X86PatchInstruction.c
   X86SpeculationBarrier.c
+  X86Interrupts.c
   X64/GccInline.c | GCC
   X64/GccInlinePriv.c | GCC
-  X64/EnableDisableInterrupts.nasm
   X64/DisablePaging64.nasm
   X64/Pvalidate.nasm
   X64/RdRand.nasm

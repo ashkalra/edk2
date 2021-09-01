@@ -6,7 +6,64 @@
 
 **/
 
+#include <Register/Amd/Msr.h>
+#include <Register/Amd/Ghcb.h>
+
 #include "CpuExceptionCommon.h"
+
+typedef struct {
+  UINT32  Dr7Cached;
+  UINT64  Dr7;
+
+  UINTN   VcCount;
+  VOID    *GhcbBackupPages;
+
+  HVDB    *Hvdb;
+  BOOLEAN HvdbPendingEvent;
+} SEV_ES_PER_CPU_DATA;
+
+/**
+  Run any pending SEV-SNP HVDB events.
+
+  @param[in]  ExceptionType  Exception type.
+  @param[in]  SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+**/
+VOID
+EFIAPI
+ArchRunHvdbPendingEvents (
+  IN EFI_EXCEPTION_TYPE          ExceptionType,
+  IN EFI_SYSTEM_CONTEXT          SystemContext
+  )
+{
+  EFI_SYSTEM_CONTEXT_X64    *Regs;
+  IA32_EFLAGS32             Rflags;
+  MSR_SEV_ES_GHCB_REGISTER  Msr;
+  GHCB                      *Ghcb;
+  SEV_ES_PER_CPU_DATA       *SevEsData;
+
+  if (ExceptionType == HV_EXCEPTION) {
+    return;
+  }
+
+  Regs = SystemContext.SystemContextX64;
+  Rflags.UintN = Regs->Rflags;
+  if (!Rflags.Bits.IF) {
+    return;
+  }
+
+  Msr.GhcbPhysicalAddress = AsmReadMsr64 (MSR_SEV_ES_GHCB);
+  ASSERT (Msr.GhcbInfo.Function == 0);
+
+  if (Msr.Ghcb == 0)
+    return;
+
+  Ghcb = Msr.Ghcb;
+  SevEsData = (SEV_ES_PER_CPU_DATA *) (Ghcb + 1);
+
+  if (SevEsData->HvdbPendingEvent) {
+    asm volatile ("int %0\t\n" :: "i" (28));
+  }
+}
 
 /**
   Return address map of exception handler template so that C code can generate

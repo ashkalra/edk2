@@ -5,11 +5,11 @@
 ;
 ; Module Name:
 ;
-;   EnableInterrupts.Asm
+;   AsmEnableInterrupts.Asm
 ;
 ; Abstract:
 ;
-;   EnableInterrupts function
+;   AsmEnableInterrupts function
 ;
 ; Notes:
 ;
@@ -21,12 +21,12 @@
 ;------------------------------------------------------------------------------
 ; VOID
 ; EFIAPI
-; EnableInterrupts (
+; AsmEnableInterrupts (
 ;   VOID
 ;   );
 ;------------------------------------------------------------------------------
-global ASM_PFX(EnableInterrupts)
-ASM_PFX(EnableInterrupts):
+global ASM_PFX(AsmEnableInterrupts)
+ASM_PFX(AsmEnableInterrupts):
     sti
     ret
 
