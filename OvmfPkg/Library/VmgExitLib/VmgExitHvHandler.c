@@ -72,6 +72,8 @@ InternalVmgExitHandleHv (
     return EFI_SUCCESS;
   }
 
+  SevEsData->HvdbPendingEvent = FALSE;
+
   PendingEvents = &Hvdb->Events.PendingEvents.Uint16;
   Events.PendingEvents.Uint16 = 0;
   asm volatile ("xchgw %w0, %1\n"
@@ -83,8 +85,6 @@ InternalVmgExitHandleHv (
 
   if (Events.PendingEvents.Bits.MceRequested) {
   }
-
-  SevEsData->HvdbPendingEvent = FALSE;
 
   //
   // Return the supplied vector to have the exception handler
