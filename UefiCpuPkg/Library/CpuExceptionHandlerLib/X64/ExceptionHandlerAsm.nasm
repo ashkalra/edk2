@@ -281,6 +281,12 @@ DrFinish:
     call    rax
     mov     rcx, [rbp + 8]
     mov     rdx, rsp
+    ;
+    ; Another #HV may become pending once PendingEvent has been
+    ; cleared, so re-check for any pending #HV doorbell events before
+    ; interrupt return. NOTE: iretq will not cause any pending
+    ; interrupts to be delivered when restricted interrupt injection is active.
+    ;
     mov     rax, ASM_PFX(ArchRunHvdbPendingEvents)
     call    rax
     add     rsp, 4 * 8 + 8
