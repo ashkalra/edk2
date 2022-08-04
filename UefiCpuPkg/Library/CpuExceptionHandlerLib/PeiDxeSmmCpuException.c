@@ -49,7 +49,7 @@ CommonExceptionHandlerWorker (
     // #HV needs to be handled immediately upon enabling exception handling
     // and therefore can't use the RegisterCpuInterruptHandler() interface.
     //
-    // Handle the #VC:
+    // Handle the #HV:
     //   On EFI_SUCCESS - Exception has been handled, return
     //   On other       - ExceptionType contains (possibly new) exception
     //                    value
