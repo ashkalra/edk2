@@ -84,6 +84,17 @@ InternalVmgExitHandleHv (
 		: "+r" (Events.PendingEvents.Uint16), "+m" (*PendingEvents)
 		: : "memory", "cc");
 
+  //
+  // We can race here with RunHvdbPendingEvents() which is invoked after
+  // interrupts are enabled, there is a window after HvdbPendingEvent
+  // flag is checked and before #HV exception handler is invoked, where
+  // HV can inject another interrupt which will handle and clear
+  // PendingEvents, so simply return here if PendingEvents is found to
+  // be clear.
+  //
+  if (!Events.PendingEvents.Uint16)
+	  return EFI_SUCCESS;
+
   if (Events.PendingEvents.Bits.NmiRequested) {
   }
 
