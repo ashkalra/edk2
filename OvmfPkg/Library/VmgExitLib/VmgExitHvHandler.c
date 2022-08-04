@@ -48,6 +48,7 @@ InternalVmgExitHandleHv (
   HVDB                    *Hvdb;
   UINT16                  *PendingEvents;
   HVDB_EVENTS             Events;
+  UINT8                   *NmEvents;
 
   Regs = SystemContext.SystemContextX64;
 
@@ -61,14 +62,17 @@ InternalVmgExitHandleHv (
     //
     // Interrupts are disabled, only process non-maskable events
     //
-    if (Hvdb->Events.PendingEvents.Bits.NmiRequested) {
+    NmEvents = &Hvdb->Events.PendingEvents.Fields.NmEvents;
+    Events.PendingEvents.Fields.NmEvents = 0;
+    asm volatile ("xchgb %b0, %1\n"
+		: "+r" (Events.PendingEvents.Fields.NmEvents) , "+m" (*NmEvents)
+		: : "memory", "cc");
+
+    if (Events.PendingEvents.Bits.NmiRequested) {
     }
 
-    if (Hvdb->Events.PendingEvents.Bits.MceRequested) {
+    if (Events.PendingEvents.Bits.MceRequested) {
     }
-
-    Hvdb->Events.PendingEvents.Bits.NoFurtherSignal = 0;
-
     return EFI_SUCCESS;
   }
 
